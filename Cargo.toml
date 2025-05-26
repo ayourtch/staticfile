@@ -12,8 +12,8 @@ keywords = ["iron", "web", "http", "file"]
 cache = ["filetime"]
 
 [dependencies]
-iron = ">=0.5, <0.7"
-mount = ">= 0.3, <0.5"
+iron = { git = "https://github.com/ayourtch/iron" }
+mount = { git = "https://github.com/ayourtch/iron" }
 time = "0.1"
 url = "1.1"
 
@@ -23,5 +23,5 @@ optional = true
 
 [dev-dependencies]
 hyper = "0.10"
-router = ">=0.5, <0.7"
+router = { git = "https://github.com/ayourtch/iron" }
 iron-test = ">=0.5, <0.7"
