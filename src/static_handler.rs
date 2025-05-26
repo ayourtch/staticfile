@@ -9,7 +9,7 @@ use time::{self, Timespec};
 use std::time::Duration;
 
 use iron::prelude::*;
-use iron::{Handler, Url, StatusCode};
+use iron::{Handler, Url, status};
 #[cfg(feature = "cache")]
 use iron::modifier::Modifier;
 use iron::modifiers::Redirect;
@@ -76,7 +76,7 @@ impl Static {
     #[cfg(feature = "cache")]
     fn try_cache<P: AsRef<Path>>(&self, req: &mut Request, path: P) -> IronResult<Response> {
         match self.cache {
-            None => Ok(Response::with((StatusCode::OK, path.as_ref()))),
+            None => Ok(Response::with((status::Ok, path.as_ref()))),
             Some(ref cache) => cache.handle(req, path.as_ref()),
         }
     }
@@ -92,9 +92,9 @@ impl Handler for Static {
             Ok(meta) => meta,
             Err(e) => {
                 let status = match e.kind() {
-                    io::ErrorKind::NotFound => StatusCode::NOT_FOUND,
-                    io::ErrorKind::PermissionDenied => StatusCode::FORBIDDEN,
-                    _ => StatusCode::INTERNAL_SERVER_ERROR,
+                    io::ErrorKind::NotFound => status::NotFound,
+                    io::ErrorKind::PermissionDenied => status::Forbidden,
+                    _ => status::InternalServerError,
                 };
 
                 return Err(IronError::new(e, status))
@@ -117,21 +117,21 @@ impl Handler for Static {
             original_url.path_segments_mut().unwrap().push("");
             let redirect_path = Url::from_generic_url(original_url).unwrap();
 
-            return Ok(Response::with((StatusCode::MOVED_PERMANENTLY,
+            return Ok(Response::with((status::MovedPermanently,
                                       format!("Redirecting to {}", redirect_path),
                                       Redirect(redirect_path))));
         }
 
         match requested_path.get_file(&metadata) {
             // If no file is found, return a 404 response.
-            None => Err(IronError::new(NoFile, StatusCode::NOT_FOUND)),
+            None => Err(IronError::new(NoFile, status::NotFound)),
             // Won't panic because we know the file exists from get_file.
             #[cfg(feature = "cache")]
             Some(path) => self.try_cache(req, path),
             #[cfg(not(feature = "cache"))]
             Some(path) => {
                 let path: &Path = &path;
-                Ok(Response::with((StatusCode::OK, path)))
+                Ok(Response::with((status::Ok, path)))
             },
         }
     }
@@ -234,6 +234,6 @@ impl Error for NoFile {
 
 impl fmt::Display for NoFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(&self.to_string())
+        f.write_str(self.description())
     }
 }
